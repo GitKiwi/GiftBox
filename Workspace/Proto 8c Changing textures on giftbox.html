@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Proto 8c</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body{
+            /* fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
+
+<!-- Javascript to run three.js -->
+<script type="text/javascript">
+
+    // 
+    $(function () {
+
+        var stats = initStats();
+
+        // create scene created to hold all elements: objects, cameras and lights etc.
+        var scene = new THREE.Scene();
+
+        // create camera
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // create a render and set the size
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setClearColorHex(0xEEEEEE, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //shadows enabled
+		renderer.shadowMapEnabled = true;
+
+        // create a plane for the floor
+        var floor = createMesh(new THREE.PlaneGeometry(60,60,1,1), "floor-wood.jpg");
+        floor.receiveShadow  = true;
+
+        // rotate and position the floor
+        floor.rotation.x= -Math.PI / 2;
+		//the floor is moved down the y axis because the centre of the gift box is at y = 0
+        floor.position.set (0,-4,0);
+
+        // add the floor to the scene
+        scene.add(floor);
+
+        // add cube with texture
+		var cubeGeometry = new THREE.CubeGeometry(4,4,4);
+		var cubeMaterial = new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture("../textures/christmas.jpg") });
+		var cube = new THREE.Mesh(cubeGeometry,cubeMaterial);
+		
+		//slight rotation for edge on view, shadow enabled
+		cube.position.set (0,0,0);
+		cube.rotation.set (0,-1.2,0);
+		cube.receiveShadow  = true;
+        
+        // add the cube to scene
+        scene.add(cube);
+		
+		// box is the first of four Blender models that make up the gift box
+		var box;
+		// load in geometry only
+		var loaderOne = new THREE.JSONLoader();
+		loaderOne.load('../models/box.js', function (geometry)
+		{
+			//set material colour and identical ambient colour
+			var material = new THREE.MeshLambertMaterial({color: 0xffff00});
+            material.ambient.set( 0xffff00 )
+			box = new THREE.Mesh(geometry, material);
+			//position, scale
+            box.position.set (5,0,5);
+			box.scale.set (1,1,1);
+			//box.name = "mybox";
+            scene.add(box);
+        });
+        
+
+        // position and point camera 
+        camera.position.set (0,4,14);
+        camera.lookAt(scene.position);
+
+        // add fairly bright ambient lighting. Coordinating this with the spotlight to be done.
+        var ambientLight = new THREE.AmbientLight(0x888888);
+        scene.add(ambientLight);
+		
+		// add spotlight for the shadows
+		var spotLight = new THREE.SpotLight( 0xffffff );
+        spotLight.position.set( -10, 14, 14 );
+		spotLight.target = floor;
+        spotLight.castShadow = true;
+        scene.add( spotLight );
+
+        // add the output of the renderer to the html element
+        $("#WebGL-output").append(renderer.domElement);
+
+        // call the render function
+        var step=0;
+
+        var controls = new function()
+		{
+			//initial gui control panel values
+            this.changeTexture = "christmas";
+						
+			//changing the texture
+			this.changeTexture = function (e)
+			{
+            var texture = THREE.ImageUtils.loadTexture("../textures/" + e + ".jpg");
+            cube.material.map = texture;
+			}
+		}
+		
+		//gui control panel
+        var gui = new dat.GUI();
+      
+		gui.add(controls, "changeTexture", ['christmas', 'valentine', 'birthday']).onChange(controls.changeTexture);
+		
+	
+		var lid;
+		var topribbon;
+		var bottomribbon;
+   
+		
+		var loaderTwo = new THREE.JSONLoader();
+		loaderTwo.load('../models/lid.js', function (geometry)
+		{
+			var giftMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+            giftMaterial.ambient.set( 0x7777ff )
+			lid = new THREE.Mesh(geometry, giftMaterial);
+			lid.position.set (5,0,5);
+			lid.scale.set (1,1,1);
+            scene.add(lid);
+        });
+		
+		var loaderThree = new THREE.JSONLoader();
+		loaderThree.load('../models/bottom ribbon.js', function (geometry)
+		{
+			var giftMaterial = new THREE.MeshLambertMaterial({color: 0xff0000});
+            giftMaterial.ambient.set( 0xff0000 )
+			bottomribbon = new THREE.Mesh(geometry, giftMaterial);
+			bottomribbon.position.set (5,0,5);
+			bottomribbon.scale.set (1,1,1);
+            scene.add(bottomribbon);
+        });
+		
+		var loaderFour = new THREE.JSONLoader();
+		loaderFour.load('../models/top ribbon.js', function (geometry)
+		{
+			var giftMaterial = new THREE.MeshLambertMaterial({color: 0xff0000});
+            giftMaterial.ambient.set( 0xff0000)
+			topribbon = new THREE.Mesh(geometry, giftMaterial);
+			topribbon.position.set (5,0,5);
+			topribbon.scale.set (1,1,1);
+            scene.add(topribbon);
+        });
+		
+		
+		
+        render();
+
+        function render()
+		{
+            stats.update();
+                   
+            // render using requestAnimationFrame
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+		function createMesh(geom, imageFile)
+		{
+            var texture = THREE.ImageUtils.loadTexture("../textures/" + imageFile)
+            var mat = new THREE.MeshLambertMaterial();
+            mat.map = texture;
+
+            var mesh = new THREE.Mesh(geom, mat);
+            return mesh;
+        }
+		
+		
+		
+		
+		
+        function initStats() {
+
+            var stats = new Stats();
+
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            $("#Stats-output").append( stats.domElement );
+
+            return stats;
+        }
+    });
+
+
+
+</script>
+</body>
+</html>
