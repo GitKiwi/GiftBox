@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Blender Proto 5 Texture</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body{
+            /* fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
+
+<!-- Javascript to run three.js -->
+<script type="text/javascript">
+
+    // 
+    $(function () {
+
+        
+        var scene = new THREE.Scene();       
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);        
+        
+		var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColorHex(0xEEEEEE, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);	
+		renderer.shadowMapEnabled = true;
+     
+		// this object holds my model so I can rotate it later
+		var group = new THREE.Object3D();
+	 
+		// load in geometry and textures
+		var loader = new THREE.JSONLoader();
+		loader.load('../models/two textures on cube 03.js', function (geometry, material)
+		{
+			var matOne = new THREE.MeshLambertMaterial(material[1]);
+			var matTwo = new THREE.MeshLambertMaterial(material[2]);
+			box = new THREE.Mesh(geometry, matOne);
+			
+			//position, scale
+			box.position.set (0,0,0);
+			box.rotation.set (0,-1.2,0);
+			box.scale.set (2,2,2);
+			box.receiveShadow  = true;
+			group.add(box);
+					
+        }, '../models');
+        
+		scene.add(group);
+				
+        // add lighting
+		var spotLight = new THREE.SpotLight( 0xffffff );
+		spotLight.position.set( -10, 14, 14 );
+		spotLight.target = group;
+		spotLight.castShadow = true;
+		scene.add( spotLight );	
+
+		var ambientLight = new THREE.AmbientLight(0x888888);
+        scene.add(ambientLight);
+        		
+        // position and point camera 
+        camera.position.set (0,4,14);
+        camera.lookAt(scene.position);
+
+        // add the output of the renderer to the html element
+        $("#WebGL-output").append(renderer.domElement);
+
+        //gui control panel
+        var controls = new function()
+		{					
+			//changing the texture
+			this.changeTexture = function (e)
+			{
+			switch (e) 
+				{
+            case "birthday":
+			group.box.material.set(giftMatOne);
+			group.box.material.dynamic = true;
+			group.box.material.needsUpdate = true;
+			group.box.material.map.needsUpdate = true;
+			break;
+			
+            case "christmas":
+            group.box.material.set(giftMatTwo);
+			group.box.material.dynamic = true;
+			group.box.material.needsUpdate = true;
+			group.box.material.map.needsUpdate = true;
+            break;
+				}
+			}
+		}
+		
+		
+		//gui control panel
+        var gui = new dat.GUI();
+		gui.add(controls, "changeTexture", ['birthday', 'christmas']).onChange(controls.changeTexture);
+				
+        render();
+
+        function render()
+		{      
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+ 
+    });
+
+</script>
+</body>
+</html>
